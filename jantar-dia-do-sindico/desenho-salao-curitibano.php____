@@ -1,0 +1,320 @@
+<?php
+ini_set("display_errors", 1);
+    $Dados = new Dados();
+    $mesas = $Dados->lerMesas();
+    $tamPadrao = 7500;
+    
+    $img            =   imagecreatefromjpeg(DIR_IMAGENS . "jantar-dia-do-sindico/salao$tamPadrao.jpg");
+    $corCinza       =   imagecolorallocate($img, 105, 105, 105);
+    $corVermelha    =   imagecolorallocate($img, 255, 0, 0);
+    $corVerde       =   imagecolorallocate($img, 0, 255, 0);
+    $corAzul        =   imagecolorallocate($img, 0, 0, 255);
+    $corAmarela     =   imagecolorallocate($img, 255, 255, 0);
+    $corPreta       =   imagecolorallocate($img, 0, 0, 0);
+    $x              =   imagesx($img);
+    $y              =   imagesy($img);
+    texto($img, "PALCO", $x/2*0.95, $y/2*1.35, 60*$x/$tamPadrao, null, $corAzul);
+    // pista
+        circulo($img, 1000, $x / 2, $y / 2, $x / 2 / 4, $corPreta);
+        circulo($img, 1000, $x / 2, $y / 2, $x / 2 / 4.5, $corPreta);
+        circulo($img, 1000, $x / 2, $y / 2, $x / 2 / 4.7, $corPreta);
+        texto($img, "PISTA", $x / 2 * 0.95, $y / 2, 60*$x/$tamPadrao, null, $corAzul);
+    //
+    texto($img, "GARÇONS", $x / 2 * 1.6, $y / 2 * 1.35, 40*$x/$tamPadrao, null, $corAzul);
+    texto($img, "BAR", $x / 2 * 1.45, $y / 2 * 1.45, 40*$x/$tamPadrao, null, $corAzul);
+    texto($img, "SANITÁRIO", $x / 2 * 0.7, $y / 2 * 1.8, 40*$x/$tamPadrao, null, $corAzul);
+    texto($img, "FEMININO", $x / 2 * 0.7, $y / 2 * 1.82, 40*$x/$tamPadrao, null, $corAzul);
+    texto($img, "SANITÁRIO", $x / 2 * 1.0, $y / 2 * 1.8, 40*$x/$tamPadrao, null, $corAzul);
+    texto($img, "MASCULINO", $x / 2 * 1.0, $y / 2 * 1.82, 40*$x/$tamPadrao, null, $corAzul);
+    texto($img, "ACESSO PRINCIPAL", $x / 2 * 0.2, $y / 2 * 1.7, 40*$x/$tamPadrao, null, $corAzul);
+    texto($img, "SAIDA DE EMERGÊNCIA", $x / 2 * 0.03, $y / 2 * 0.86, 20*$x/$tamPadrao, null, $corVermelha);
+        
+    $lugares = array('A1'=>array(0,0,1,1,1,0,0,1));
+    
+    $areas = mesas($img, "A", $mesas, $x / 2, $y / 2, $x / 2 * 0.333, $y / 2 * 1.1, $tamPadrao); // fila A
+    $areas = array_merge($areas, mesas($img, "B", $mesas, $x / 2, $y / 2, $x / 2 * 0.45, $tamPadrao)); // fila B
+    $areas = array_merge($areas, mesas($img, "C", $mesas, $x / 2, $y / 2, $x / 2 * 0.57, $tamPadrao)); // fila C
+    $areas = array_merge($areas, mesas($img, "D", $mesas, $x / 2, $y / 2, $x / 2 * 0.68, $tamPadrao)); // fila D
+    $areas = array_merge($areas, mesas($img, "E", $mesas, $x / 2, $y / 2, $x / 2 * 0.8, $tamPadrao)); // fila E
+    $areas = array_merge($areas, mesas($img, "F", $mesas, $x / 2, $y / 2, $x / 2 * 0.9, $tamPadrao)); // fila F
+    $nomeImg = "salao.jpg";// . date("YmdHis") . ".jpg";
+    imagejpeg($img, DIR_IMAGENS . "jantar-dia-do-sindico/" . $nomeImg, 100);
+    chmod(DIR_IMAGENS . "jantar-dia-do-sindico/" . $nomeImg, 0777);
+    $Dados->atualizarSituacaoAtualizacao(0);
+    unset($Dados);
+
+    function mesas($img, $fila, $mesas, $x, $y, $raio, $tamPadrao) {
+        $corPreta = imagecolorallocate($img, 0, 0, 0);
+        $qtMesas = 0;
+        foreach($mesas as $mesa) {
+            if($mesa["FILA"] == $fila) {
+                $qtMesas++;
+            }
+        }
+        $dist = 2 * pi() / $qtMesas;
+        $i = 0;
+        $areas = array();
+        foreach($mesas as $mesa) {
+            if($mesa["FILA"] == $fila) {
+                if($mesa["TIPO"] != 0) {
+                    $cos = cos($i * $dist);
+                    $sen = sin($i * $dist);
+                    $x1 = $cos * $raio * -1 + $x;
+                    $y1 = $sen * $raio * -1 + $y;
+//echo "<br/>update mesas set x7000 = " . ($x1/4500*7000) . ", y7000 = " . ($y1/4500*7000) . " where numero_mesa = " . $mesa["NUMERO_MESA"] . ";";                    
+                    if($mesa["TIPO"] == 1 AND $mesa["MOSTRAR"] == 1) { // mesa
+                        $tamMesa    =   imagesx($img) * 0.035;
+                        $tamCadeira = $tamMesa / 8;
+                        $num = $mesa["NUMERO_MESA"];
+                        desenharCadeiras($img, 8, $x1, $y1, $tamMesa*0.5, $tamCadeira, $mesa["QT_LUGARES_OCUPADOS"], $mesa["QT_LUGARES_RESERVADOS"], $corPreta, false, $num); // cadeiras
+                        $cor = $mesa["QT_LUGARES_OCUPADOS"] < 8 ? $corPreta : imagecolorallocate($img, 255, 0, 0);
+                        imageellipse($img, $x1, $y1, $tamMesa, $tamMesa, $cor);
+                        imageellipse($img, $x1, $y1, $tamMesa*0.8, $tamMesa*0.8, $cor);
+                        texto($img, $num, $x1-$tamCadeira*3, $y1+$tamCadeira, $tamMesa * 0.35, null, $cor);
+                        $areas[] = array("x1" => $x1-$tamCadeira, "y1" => $y1+$tamCadeira, "x2" => $x1 + $tamCadeira, "y2" => $y1 + $tamCadeira, "num" => $num);
+                    }
+                    elseif($mesa["TIPO"] == 2) { // coluna
+                        imagefilledellipse($img, $x1, $y1, $raio * 0.05, $raio * 0.05, imagecolorallocate($img, 122, 132, 189));
+                    }
+                }
+                $i++;
+            }
+        }
+//die;        
+        return $areas;
+    }
+    
+    function circulo($img, $qtPontos, $x, $y, $raio, $cor) {
+        $dist = 2 * pi() / $qtPontos;
+        for($i = 0; $i < $qtPontos; $i++) {
+            $cos = cos($i * $dist);
+            $sen = sin($i * $dist);
+            $x1 = $cos * $raio + $x;
+            $y1 = $sen * $raio + $y;
+            imagesetpixel($img, $x1, $y1, $cor);
+        }
+    }
+        
+    function mesas1($img, $fila, $mesas, $x, $y, $raio) {
+        $posicoes = array(
+            101=> array('x'=>1500.75,'y'=>2250),
+            200=> array('x'=>1528.5342224547,'y'=>2047.8547692106),
+            201=> array('x'=>1609.8262611435,'y'=>1860.701725436),
+            202=> array('x'=>1738.5970574434,'y'=>1702.4211537646),
+            300=> array('x'=>1905.2962704799,'y'=>1584.752000112),
+            301=> array('x'=>2097.5605822203,'y'=>1516.421247304),
+            302=> array('x'=>2301.1306282135,'y'=>1502.496674684),
+            400=> array('x'=>2500.9085494191,'y'=>1544.0110041025),
+            401=> array('x'=>2682.0777313446,'y'=>1637.8853076619),
+            402=> array('x'=>2831.2016845603,'y'=>1777.1573577137),
+            500=> array('x'=>2937.220567653,'y'=>1951.4979834327),
+            501=> array('x'=>2992.2714450677,'y'=>2147.9771381646),
+            502=> array('x'=>2992.2714450677,'y'=>2352.0228618354),
+            100=> array('x'=>1528.5342224547,'y'=>2452.1452307894),
+            103=> array('x'=>1237.5,'y'=>2350),
+            104=> array('x'=>1258.2259344818,'y'=>2146.1852484102),
+            203=> array('x'=>1309.5552157345,'y'=>1910.7146966978),
+            204=> array('x'=>1408.9770157776,'y'=>1731.5909322165),
+            205=> array('x'=>1542.4209944359,'y'=>1574.1473029305),
+            206=> array('x'=>1704.423939544,'y'=>1450.7476892866),
+            303=> array('x'=>1898.3534314946,'y'=>1300.5259662011),
+            304=> array('x'=>2096.6793752766,'y'=>1249.1758216178),
+            305=> array('x'=>2301.2822834492,'y'=>1238.7995364893),
+            306=> array('x'=>2503.785688912,'y'=>1269.821917148),
+            403=> array('x'=>2695.8990784521,'y'=>1340.9729036846),
+            404=> array('x'=>2869.7573073295,'y'=>1449.3395663506),
+            405=> array('x'=>3018.2425992265,'y'=>1590.4853612438),
+            503=> array('x'=>3135.2759488464,'y'=>1758.6317629373),
+            504=> array('x'=>3216.065997105,'y'=>1946.8948379895),
+            505=> array('x'=>3257.3051899343,'y'=>2147.5670739877),
+            506=> array('x'=>3257.3051899343,'y'=>2352.4329260123),
+            102=> array('x'=>1258.2259344818,'y'=>2573.8147515898),
+            106=> array('x'=>967.5,'y'=>2450),
+            107=> array('x'=>988.11030262226,'y'=>2221.0007824207),
+            108=> array('x'=>1049.2787784045,'y'=>1999.3617881157),
+            207=> array('x'=>1149.0394222056,'y'=>1592.2066767269),
+            208=> array('x'=>1284.1858448504,'y'=>1406.1935839823),
+            209=> array('x'=>1450.3743291162,'y'=>1247.3011237348),
+            210=> array('x'=>1642.2634403784,'y'=>1120.6362303937),
+            307=> array('x'=>1853.6857047141,'y'=>1030.2700178515),
+            308=> array('x'=>2077.8458365889,'y'=>979.10693053262),
+            309=> array('x'=>2307.5391449245,'y'=>968.79139216076),
+            310=> array('x'=>2535.383097799,'y'=>999.65495262681),
+            406=> array('x'=>2754.0546030962,'y'=>1070.7056317028),
+            407=> array('x'=>2956.5253787123,'y'=>1179.6598021024),
+            408=> array('x'=>3136.2878473257,'y'=>1323.0155871414),
+            409=> array('x'=>3287.5642952859,'y'=>1496.1654139349),
+            507=> array('x'=>3405.4925730849,'y'=>1693.5441045817),
+            508=> array('x'=>3486.2823688424,'y'=>1908.8077455607),
+            509=> array('x'=>3527.3370320489,'y'=>2135.0375863313),
+            510=> array('x'=>3527.3370320489,'y'=>2364.9624136687),
+            105=> array('x'=>988.11030262226,'y'=>2678.9992175793),
+            'C0'=>array('x'=>720,'y'=>2250),
+            111=> array('x'=>732.06450698885,'y'=>2058.2401526466),
+            112=> array('x'=>768.06776347319,'y'=>1869.5044726378),
+            'C3'=>array('x'=>827.44197659098,'y'=>1686.7694343924),
+            211=> array('x'=>909.25077953289,'y'=>1512.9168786244),
+            212=> array('x'=>1012.2039986063,'y'=>1350.6885639925),
+            'C6'=>array('x'=>1134.6780000452,'y'=>1202.6429279291),
+            213=> array('x'=>1274.7412956845,'y'=>1071.114738553),
+            214=> array('x'=>1430.1850036821,'y'=>958.17827398192),
+            'C9'=>array('x'=>1598.5576839054,'y'=>865.61460972699),
+            311=> array('x'=>1777.2039986063,'y'=>794.88353006841),
+            312=> array('x'=>1963.3065886838,'y'=>747.10050638511),
+            'C12'=>array('x'=>2153.9305051202,'y'=>723.01910550474),
+            313=> array('x'=>2346.0694948798,'y'=>723.01910550474),
+            314=> array('x'=>2536.6934113162,'y'=>747.10050638511),
+            'C15'=>array('x'=>2722.7960013937,'y'=>794.88353006841),
+            410=> array('x'=>2901.4423160946,'y'=>865.61460972699),
+            411=> array('x'=>3069.8149963179,'y'=>958.17827398192),
+            'C18'=>array('x'=>3225.2587043155,'y'=>1071.114738553),
+            412=> array('x'=>3365.3219999548,'y'=>1202.6429279291),
+            413=> array('x'=>3487.7960013937,'y'=>1350.6885639925),
+            'C21'=>array('x'=>3590.7492204671,'y'=>1512.9168786244),
+            511=> array('x'=>3672.558023409,'y'=>1686.7694343924),
+            512=> array('x'=>3731.9322365268,'y'=>1869.5044726378),
+            'C24'=>array('x'=>3767.9354930112,'y'=>2058.2401526466),
+            513=> array('x'=>3780,'y'=>2250),
+            514=> array('x'=>3767.9354930112,'y'=>2441.7598473534),
+            'C37'=>array('x'=>2346.0694948798,'y'=>3776.9808944953),
+            109=> array('x'=>768.06776347319,'y'=>2630.4955273622),
+            110=> array('x'=>732.06450698885,'y'=>2441.7598473534),
+            116=> array('x'=>450,'y'=>2250),
+            117=> array('x'=>464.19353763394,'y'=>2024.4001795843),
+            118=> array('x'=>506.55030996846,'y'=>1802.3582031033),
+            215=> array('x'=>576.40232540115,'y'=>1587.3758051676),
+            216=> array('x'=>672.64797592105,'y'=>1382.8433866169),
+            217=> array('x'=>793.76941012509,'y'=>1191.9865458735),
+            218=> array('x'=>937.85647064146,'y'=>1017.8152093284),
+            219=> array('x'=>1102.6368184524,'y'=>863.07616300358),
+            220=> array('x'=>1285.5117690378,'y'=>730.20973409637),
+            315=> array('x'=>1483.5972751829,'y'=>621.31130556116),
+            316=> array('x'=>1693.7694101251,'y'=>538.09827066872),
+            317=> array('x'=>1912.7136337457,'y'=>481.88294868836),
+            318=> array('x'=>2136.9770648472,'y'=>453.55188882911),
+            319=> array('x'=>2363.0229351528,'y'=>453.55188882911),
+            320=> array('x'=>2587.2863662543,'y'=>481.88294868836),
+            414=> array('x'=>2806.2305898749,'y'=>538.09827066872),
+            415=> array('x'=>3016.4027248171,'y'=>621.31130556116),
+            416=> array('x'=>3214.4882309622,'y'=>730.20973409637),
+            417=> array('x'=>3397.3631815476,'y'=>863.07616300358),
+            418=> array('x'=>3562.1435293585,'y'=>1017.8152093284),
+            419=> array('x'=>3706.2305898749,'y'=>1191.9865458735),
+            515=> array('x'=>3827.352024079,'y'=>1382.8433866169),
+            516=> array('x'=>3923.5976745989,'y'=>1587.3758051676),
+            517=> array('x'=>3993.4496900315,'y'=>1802.3582031033),
+            518=> array('x'=>4035.8064623661,'y'=>2024.4001795843),
+            524=> array('x'=>4050,'y'=>2250),
+            525=> array('x'=>4035.8064623661,'y'=>2475.5998204157),
+            113=> array('x'=>576.40232540115,'y'=>2912.6241948324),
+            114=> array('x'=>506.55030996846,'y'=>2697.6417968967),
+            115=> array('x'=>464.19353763394,'y'=>2475.5998204157),
+        );
+        
+        $corFilaA       =   imagecolorallocate($img, 148, 0, 211);
+        $corFilaB       =   imagecolorallocate($img, 0, 0, 205);
+        $corFilaC       =   imagecolorallocate($img, 72, 209, 204);
+        $corFilaD       =   imagecolorallocate($img, 255, 160, 122);
+        $corFilaE       =   imagecolorallocate($img, 60, 179, 113);
+        $corFilaF       =   imagecolorallocate($img, 188, 143, 143);
+        $corPreta       =   imagecolorallocate($img, 0, 0, 0);
+        $qtMesas = 0;
+        foreach($mesas as $mesa) {
+            if($mesa["FILA"] == $fila) {
+                $qtMesas++;
+            }
+        }
+        $dist = 2 * pi() / $qtMesas;
+        $i = 0;
+        $areas = array();
+        foreach($mesas as $mesa) {
+            if($mesa["FILA"] == $fila) {
+                if($mesa["TIPO"] != 0) {
+                    $cos = cos($i * $dist);
+                    $sen = sin($i * $dist);
+                    $x1 = $cos * $raio * -1 + $x;
+                    $y1 = $sen * $raio * -1 + $y;
+                    if($mesa["TIPO"] == 1 AND $mesa["MOSTRAR"] == 1) { // mesa
+                        $tamMesa    =   imagesx($img) * 0.035;
+                        $tamCadeira = $tamMesa / 8;
+                        $num = $mesa["NUMERO_MESA"];
+                        if($num < 200) {
+                            $cor = $corFilaA;
+                        }
+                        elseif($num < 300) {
+                            $cor = $corFilaB;
+                        }
+                        elseif($num < 400) {
+                            $cor = $corFilaC;
+                        }
+                        elseif($num < 500) {
+                            $cor = $corFilaD;
+                        }
+                        elseif($num < 600) {
+                            $cor = $corFilaE;
+                        }
+                        elseif($num < 700) {
+                            $cor = $corFilaF;
+                        }
+                        desenharCadeiras($img, 8, $x1, $y1, $tamMesa*0.5, $tamCadeira, $mesa["QT_LUGARES_OCUPADOS"], $mesa["QT_LUGARES_RESERVADOS"], $corPreta, false, $num); // cadeiras
+                        $cor = $mesa["QT_LUGARES_OCUPADOS"] < 8 ? $cor: imagecolorallocate($img, 255, 0, 0);
+                        imageellipse($img, $x1, $y1, $tamMesa, $tamMesa, $cor);
+                        imageellipse($img, $x1, $y1, $tamMesa*0.8, $tamMesa*0.8, $cor);
+                        texto($img, $num, $x1-$tamCadeira*3, $y1+$tamCadeira, $tamMesa * 0.35, null, $cor);
+                        $areas[] = array("x1" => $x1-$tamCadeira, "y1" => $y1+$tamCadeira, "x2" => $x1 + $tamCadeira, "y2" => $y1 + $tamCadeira, "num" => $num);
+//echo "<br/>" . $num . "=> array('x'=>" . $x1 . ",'y'=>" . $y1 . "),";
+//echo "<br/> UPDATE mesas SET x7500 = $x1, y7500 = $y1 WHERE id = " . $mesa["ID"] . ";";
+//echo "<br/> UPDATE mesas SET x7500 = " . $posicoes[$num]['x'] . ", y7500 = " . $posicoes[$num]["y"] . " WHERE id = " . $mesa["ID"] . ";";
+                    }
+                    elseif($mesa["TIPO"] == 2) { // coluna
+                        imagefilledellipse($img, $x1, $y1, $raio * 0.05, $raio * 0.05, imagecolorallocate($img, 122, 132, 189));
+//echo "<br/>" . "'C$i'" . "=>array('x'=>" . $x1 . ",'y'=>" . $y1 . "),";
+//echo "<br/> UPDATE mesas SET x7500 = " . $posicoes[$num]['x'] . ", y7500 = " . $posicoes[$num]["y"] . " WHERE id = " . $mesa["ID"] . ";";
+                    }
+                }
+                $i++;
+            }
+        }
+//die;        
+        return $areas;
+    }
+        
+    function texto($img, $texto, $x = -1, $y = -1, $tamFonte = 15, $nomeFonte = "", $cor = -1) {
+        $nomeFonte = $nomeFonte == "" ? DIR_COMUM . "fontes/arial.ttf" : $nomeFonte;
+        $cor = $cor < 0 ? imagecolorallocate($img, 0, 0, 0) : $cor;
+        $text_box = imagettfbbox($tamFonte, 0, $nomeFonte, $texto);
+        $text_width = $text_box[2]-$text_box[0];
+        $text_height = $text_box[7]-$text_box[1];
+        if(!$x OR $x < 0) {
+            $x = (imagesx($img) / 2) - ($text_width/2);
+        }
+        if(!$y OR $y < 0) {
+            $y = (imagesy($img) / 2) - ($text_height/2);
+        }
+        imagettftext($img, $tamFonte, 0, $x, $y, $cor, $nomeFonte, $texto);        
+    }
+    
+    function desenharCadeiras($img, $qtCadeiras, $x, $y, $raio, $tamCadeira, $qtLugaresOcupados, $qtLugaresReservados, $cor, $preenchido = false, $num) {
+        $dist = 2 * pi() / $qtCadeiras;
+        $qtOcupados = $qtLugaresOcupados;
+        $qtReservados = $qtLugaresReservados;
+        for($i = 0; $i < $qtCadeiras; $i++) {
+            $cos = cos($i * $dist);
+            $sen = sin($i * $dist);
+            $x1 = $cos * $raio + $x;
+            $y1 = $sen * $raio + $y;
+            if($qtOcupados-- > 0) {
+                imagefilledellipse($img, $x1, $y1, $raio*0.5, $raio*0.5, imagecolorallocate($img, 205, 0, 0));
+            }
+            elseif($qtReservados-- > 0) {
+                imagefilledellipse($img, $x1, $y1, $raio*0.5, $raio*0.5, imagecolorallocate($img, 255, 174, 0));
+            }
+            else {
+                imagefilledellipse($img, $x1, $y1, $raio*0.5, $raio*0.5, imagecolorallocate($img, 169, 169, 169));
+            }
+        }
+    }
+    
+?>
+
+
